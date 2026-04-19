@@ -23,11 +23,30 @@ function App() {
     fetchTags();
   }, []);
 
+  const parseTags = (tagsValue) => {
+    if (Array.isArray(tagsValue)) {
+      return tagsValue;
+    }
+    if (typeof tagsValue === 'string') {
+      try {
+        const parsed = JSON.parse(tagsValue);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch {
+        return [];
+      }
+    }
+    return [];
+  };
+
   const fetchBookmarks = async () => {
     try {
       const response = await fetch(`${API_URL}/bookmarks`);
       const data = await response.json();
-      setBookmarks(data);
+      const processedData = Array.isArray(data) ? data.map(bookmark => ({
+        ...bookmark,
+        tags: parseTags(bookmark.tags)
+      })) : [];
+      setBookmarks(processedData);
     } catch (err) {
       setError('Failed to fetch bookmarks');
       console.error(err);
@@ -37,18 +56,24 @@ function App() {
   const fetchTags = async () => {
     try {
       const response = await fetch(`${API_URL}/tags`);
-      const data = await response.json();
-      setTags(data);
+      if (response.ok) {
+        const data = await response.json();
+        setTags(Array.isArray(data) ? data : []);
+      } else {
+        setTags([]);
+      }
     } catch (err) {
       console.error('Failed to fetch tags:', err);
+      setTags([]);
     }
   };
 
+  const safeBookmarks = Array.isArray(bookmarks) ? bookmarks : [];
   const filteredBookmarks = selectedTag
-    ? bookmarks.filter(bookmark => 
-        bookmark.tags && bookmark.tags.includes(selectedTag)
+    ? safeBookmarks.filter(bookmark => 
+        bookmark && Array.isArray(bookmark.tags) && bookmark.tags.includes(selectedTag)
       )
-    : bookmarks;
+    : safeBookmarks;
 
   const handleTagClick = (tag) => {
     setSelectedTag(selectedTag === tag ? null : tag);
@@ -133,11 +158,15 @@ function App() {
 
       if (response.ok) {
         const result = await response.json();
+        const processedResult = {
+          ...result,
+          tags: parseTags(result.tags)
+        };
         
         if (editingBookmark) {
-          setBookmarks(bookmarks.map(b => b.id === result.id ? result : b));
+          setBookmarks(bookmarks.map(b => b.id === processedResult.id ? processedResult : b));
         } else {
-          setBookmarks([result, ...bookmarks]);
+          setBookmarks([processedResult, ...bookmarks]);
         }
         
         setShowModal(false);
@@ -155,8 +184,8 @@ function App() {
   };
 
   const allTags = [...new Set([
-    ...tags.map(t => t.name),
-    ...bookmarks.flatMap(b => b.tags || [])
+    ...(Array.isArray(tags) ? tags.map(t => t && t.name).filter(Boolean) : []),
+    ...(Array.isArray(bookmarks) ? bookmarks.flatMap(b => b && Array.isArray(b.tags) ? b.tags : []) : [])
   ])].sort();
 
   return (
