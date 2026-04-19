@@ -1,6 +1,5 @@
-CREATE USER me;
 CREATE DATABASE api;
-GRANT ALL PRIVILEGES ON DATABASE api TO me;
+GRANT ALL PRIVILEGES ON DATABASE api TO pern_db;
 \c api 
 
 CREATE TABLE users (
@@ -46,3 +45,6 @@ INSERT INTO bookmark_tags (bookmark_id, tag_id) VALUES
   (2, 4),
   (3, 1),
   (3, 3);
+
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO pern_db;
+GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO pern_db;

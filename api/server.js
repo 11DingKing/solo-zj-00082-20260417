@@ -7,7 +7,7 @@ app.use(cors());
 app.use(express.json());
 
 const pool = new Pool({
-  user: process.env.DB_USER || "me",
+  user: process.env.DB_USER || "pern_db",
   host: process.env.DB_HOST || "db",
   database: process.env.DB_NAME || "api",
   password: process.env.DB_PASSWORD || "root",
